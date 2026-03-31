@@ -1,0 +1,600 @@
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <fstream>
+#include <limits>
+
+using namespace std;
+
+class date
+{
+private:
+    int day;
+    int month;
+    int year;
+
+public:
+    date() : day(1), month(1), year(2000) {}
+
+    void setDate(int d, int m, int y)
+    {
+        day = d;
+        month = m;
+        year = y;
+    }
+
+    bool isValid() const
+    {
+        return day >= 1 && day <= 31 &&
+               month >= 1 && month <= 12 &&
+               year > 0;
+    }
+
+    int getDay() const { return day; }
+    int getMonth() const { return month; }
+    int getYear() const { return year; }
+
+    friend istream& operator>>(istream& in, date& d)
+    {
+        in >> d.day >> d.month >> d.year;
+        return in;
+    }
+
+    friend ostream& operator<<(ostream& out, const date& d)
+    {
+        out << setw(2) << setfill('0') << d.day << "."
+            << setw(2) << setfill('0') << d.month << "."
+            << setw(4) << setfill('0') << d.year
+            << setfill(' ');
+        return out;
+    }
+};
+
+class man
+{
+private:
+    string fam;
+    string name;
+
+public:
+    man() : fam(""), name("") {}
+
+    bool operator==(const man& other) const
+    {
+        return fam == other.fam && name == other.name;
+    }
+
+    friend istream& operator>>(istream& in, man& m)
+    {
+        in >> m.fam >> m.name;
+        return in;
+    }
+
+    friend ostream& operator<<(ostream& out, const man& m)
+    {
+        out << m.fam << " " << m.name;
+        return out;
+    }
+
+    string getFam() const { return fam; }
+    string getName() const { return name; }
+
+    void setMan(const string& f, const string& n)
+    {
+        fam = f;
+        name = n;
+    }
+};
+
+class letter1
+{
+private:
+    man recipient;
+    string address;
+    date delivery;
+
+public:
+    letter1() : recipient(), address(""), delivery() {}
+
+    void input(istream& in)
+    {
+        cout << "Recipient surname and name: ";
+        in >> recipient;
+        cout << "Recipient address: ";
+        in >> address;
+
+        int d, m, y;
+        while (true)
+        {
+            cout << "Delivery date (day month year): ";
+            in >> d >> m >> y;
+
+            if (in.fail())
+            {
+                cout << "Wrong input. Enter numbers only.\n";
+                in.clear();
+                in.ignore(numeric_limits<streamsize>::max(), '\n');
+                continue;
+            }
+
+            delivery.setDate(d, m, y);
+            if (!delivery.isValid())
+            {
+                cout << "Wrong date. Try again.\n";
+                continue;
+            }
+
+            break;
+        }
+    }
+
+    bool operator==(const man& m) const
+    {
+        return recipient == m;
+    }
+
+    void save(ofstream& out) const
+    {
+        out << recipient.getFam() << '\n'
+            << recipient.getName() << '\n'
+            << address << '\n'
+            << delivery.getDay() << '\n'
+            << delivery.getMonth() << '\n'
+            << delivery.getYear() << '\n';
+    }
+
+    void load(ifstream& in)
+    {
+        string f, n;
+        int d, m, y;
+
+        getline(in, f);
+        getline(in, n);
+        getline(in, address);
+        in >> d >> m >> y;
+        in.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        recipient.setMan(f, n);
+        delivery.setDate(d, m, y);
+    }
+
+    string getAddress() const { return address; }
+    string getFam() const { return recipient.getFam(); }
+    string getName() const { return recipient.getName(); }
+    date getDate() const { return delivery; }
+};
+
+class common
+{
+public:
+    virtual ~common() {}
+
+    virtual bool operator==(const man& m) const = 0;
+    virtual void input(istream& in) = 0;
+    virtual void output(ostream& out) const = 0;
+    virtual void save(ofstream& out) const = 0;
+
+    friend istream& operator>>(istream& in, common& obj)
+    {
+        obj.input(in);
+        return in;
+    }
+
+    friend ostream& operator<<(ostream& out, const common& obj)
+    {
+        obj.output(out);
+        return out;
+    }
+};
+
+int readMenuChoice()
+{
+    int x;
+    while (true)
+    {
+        cout << "Choose: ";
+        cin >> x;
+
+        if (cin.fail())
+        {
+            cout << "Wrong input. Enter number 0..5 only.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
+
+        if (x < 0 || x > 5)
+        {
+            cout << "Wrong choice. Enter number 0..5 only.\n";
+            continue;
+        }
+
+        return x;
+    }
+}
+
+int readNonNegativeInt(const string& msg)
+{
+    int x;
+    while (true)
+    {
+        cout << msg;
+        cin >> x;
+
+        if (cin.fail() || x < 0)
+        {
+            cout << "Wrong input. Enter 0 or positive integer only.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
+
+        return x;
+    }
+}
+
+double readPositiveDouble(const string& msg)
+{
+    double x;
+    while (true)
+    {
+        cout << msg;
+        cin >> x;
+
+        if (cin.fail() || x <= 0)
+        {
+            cout << "Wrong input. Enter positive number only.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
+
+        return x;
+    }
+}
+
+class letter : public common
+{
+private:
+    string adr1;
+    man fname1;
+    string adr2;
+    man fname2;
+    double cost;
+
+public:
+    letter() : adr1(""), fname1(), adr2(""), fname2(), cost(1.0) {}
+
+    bool operator==(const man& m) const override
+    {
+        return fname1 == m;
+    }
+
+    void input(istream& in) override
+    {
+        cout << "\nEnter letter data:\n";
+        cout << "Recipient address: ";
+        in >> adr1;
+        cout << "Recipient surname and name: ";
+        in >> fname1;
+        cout << "Sender address: ";
+        in >> adr2;
+        cout << "Sender surname and name: ";
+        in >> fname2;
+        cost = readPositiveDouble("Cost (>0): ");
+    }
+
+    void output(ostream& out) const override
+    {
+        out << left
+            << setw(10) << "letter"
+            << setw(16) << adr1
+            << setw(14) << fname1.getFam()
+            << setw(14) << fname1.getName()
+            << setw(16) << adr2
+            << setw(14) << fname2.getFam()
+            << setw(14) << fname2.getName()
+            << setw(12) << fixed << setprecision(2) << cost
+            << setw(14) << "-";
+    }
+
+    void save(ofstream& out) const override
+    {
+        out << adr1 << '\n'
+            << fname1.getFam() << '\n'
+            << fname1.getName() << '\n'
+            << adr2 << '\n'
+            << fname2.getFam() << '\n'
+            << fname2.getName() << '\n'
+            << cost << '\n';
+    }
+
+    void load(ifstream& in)
+    {
+        string fam1, name1, fam2, name2;
+
+        getline(in, adr1);
+        getline(in, fam1);
+        getline(in, name1);
+        getline(in, adr2);
+        getline(in, fam2);
+        getline(in, name2);
+        in >> cost;
+        in.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        fname1.setMan(fam1, name1);
+        fname2.setMan(fam2, name2);
+    }
+
+    string getSenderAddress() const { return adr2; }
+    man getSender() const { return fname2; }
+    double getCost() const { return cost; }
+};
+
+class parcel : public common
+{
+private:
+    letter1 recPart;
+    string adr2;
+    man fname2;
+    double cost;
+
+public:
+    parcel() : recPart(), adr2(""), fname2(), cost(1.0) {}
+
+    bool operator==(const man& m) const override
+    {
+        return recPart == m;
+    }
+
+    void input(istream& in) override
+    {
+        cout << "\nEnter parcel data:\n";
+        recPart.input(in);
+        cout << "Sender address: ";
+        in >> adr2;
+        cout << "Sender surname and name: ";
+        in >> fname2;
+        cost = readPositiveDouble("Cost (>0): ");
+    }
+
+    void output(ostream& out) const override
+    {
+        out << left
+            << setw(10) << "parcel"
+            << setw(16) << recPart.getAddress()
+            << setw(14) << recPart.getFam()
+            << setw(14) << recPart.getName()
+            << setw(16) << adr2
+            << setw(14) << fname2.getFam()
+            << setw(14) << fname2.getName()
+            << setw(12) << fixed << setprecision(2) << cost
+            << setw(14) << recPart.getDate();
+    }
+
+    void save(ofstream& out) const override
+    {
+        recPart.save(out);
+        out << adr2 << '\n'
+            << fname2.getFam() << '\n'
+            << fname2.getName() << '\n'
+            << cost << '\n';
+    }
+
+    void load(ifstream& in)
+    {
+        string fam2, name2;
+
+        recPart.load(in);
+        getline(in, adr2);
+        getline(in, fam2);
+        getline(in, name2);
+        in >> cost;
+        in.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        fname2.setMan(fam2, name2);
+    }
+};
+
+void showMenu()
+{
+    cout << "\n==================== MENU ====================\n";
+    cout << "1. Enter letters\n";
+    cout << "2. Enter parcels\n";
+    cout << "3. Search by recipient surname and name\n";
+    cout << "4. Show search results\n";
+    cout << "5. Save data\n";
+    cout << "0. Exit\n";
+    cout << "==============================================\n";
+}
+
+void printHeader()
+{
+    cout << "\n=================== RESULTS ===================\n";
+    cout << left
+         << setw(10) << "type"
+         << setw(16) << "adr_rec"
+         << setw(14) << "fam_rec"
+         << setw(14) << "name_rec"
+         << setw(16) << "adr_send"
+         << setw(14) << "fam_send"
+         << setw(14) << "name_send"
+         << setw(12) << "cost"
+         << setw(14) << "date"
+         << endl;
+    cout << "----------------------------------------------------------------------------------------------\n";
+}
+
+void saveLetters(letter* arrLetter, int n1)
+{
+    ofstream fout("letters.txt");
+    fout << n1 << '\n';
+    for (int i = 0; i < n1; i++)
+        arrLetter[i].save(fout);
+}
+
+void saveParcels(parcel* arrParcel, int n2)
+{
+    ofstream fout("parcels.txt");
+    fout << n2 << '\n';
+    for (int i = 0; i < n2; i++)
+        arrParcel[i].save(fout);
+}
+
+void loadLetters(letter*& arrLetter, int& n1)
+{
+    ifstream fin("letters.txt");
+    if (!fin)
+    {
+        n1 = 0;
+        arrLetter = nullptr;
+        return;
+    }
+
+    fin >> n1;
+    fin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    arrLetter = new letter[n1];
+    for (int i = 0; i < n1; i++)
+        arrLetter[i].load(fin);
+}
+
+void loadParcels(parcel*& arrParcel, int& n2)
+{
+    ifstream fin("parcels.txt");
+    if (!fin)
+    {
+        n2 = 0;
+        arrParcel = nullptr;
+        return;
+    }
+
+    fin >> n2;
+    fin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    arrParcel = new parcel[n2];
+    for (int i = 0; i < n2; i++)
+        arrParcel[i].load(fin);
+}
+
+int main()
+{
+    letter* arrLetter = nullptr;
+    parcel* arrParcel = nullptr;
+    common** Result = nullptr;
+
+    int n1 = 0, n2 = 0;
+    int k = 0;
+    int choice;
+    man key;
+
+    loadLetters(arrLetter, n1);
+    loadParcels(arrParcel, n2);
+
+    do
+    {
+        showMenu();
+        choice = readMenuChoice();
+
+        switch (choice)
+        {
+        case 1:
+        {
+            delete[] arrLetter;
+            arrLetter = nullptr;
+
+            n1 = readNonNegativeInt("How many letters? ");
+            arrLetter = new letter[n1];
+
+            for (int i = 0; i < n1; i++)
+            {
+                cout << "\nLetter #" << i + 1 << endl;
+                cin >> arrLetter[i];
+            }
+
+            saveLetters(arrLetter, n1);
+            cout << "Letters saved.\n";
+            break;
+        }
+
+        case 2:
+        {
+            delete[] arrParcel;
+            arrParcel = nullptr;
+
+            n2 = readNonNegativeInt("How many parcels? ");
+            arrParcel = new parcel[n2];
+
+            for (int i = 0; i < n2; i++)
+            {
+                cout << "\nParcel #" << i + 1 << endl;
+                cin >> arrParcel[i];
+            }
+
+            saveParcels(arrParcel, n2);
+            cout << "Parcels saved.\n";
+            break;
+        }
+
+        case 3:
+        {
+            delete[] Result;
+            Result = new common*[n1 + n2];
+            k = 0;
+
+            cout << "Enter recipient surname and name for search: ";
+            cin >> key;
+
+            for (int i = 0; i < n1; i++)
+                if (arrLetter[i] == key)
+                    Result[k++] = &arrLetter[i];
+
+            for (int i = 0; i < n2; i++)
+                if (arrParcel[i] == key)
+                    Result[k++] = &arrParcel[i];
+
+            cout << "Search completed.\n";
+            break;
+        }
+
+        case 4:
+        {
+            if (k == 0)
+            {
+                cout << "\nNo matching objects found.\n";
+            }
+            else
+            {
+                printHeader();
+                for (int i = 0; i < k; i++)
+                    cout << *Result[i] << endl;
+                cout << "----------------------------------------------------------------------------------------------\n";
+            }
+            break;
+        }
+
+        case 5:
+        {
+            saveLetters(arrLetter, n1);
+            saveParcels(arrParcel, n2);
+            cout << "All data saved.\n";
+            break;
+        }
+
+        case 0:
+        {
+            saveLetters(arrLetter, n1);
+            saveParcels(arrParcel, n2);
+            cout << "Program finished.\n";
+            break;
+        }
+        }
+
+    } while (choice != 0);
+
+    delete[] arrLetter;
+    delete[] arrParcel;
+    delete[] Result;
+
+    return 0;
+}
