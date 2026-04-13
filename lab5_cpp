@@ -1,0 +1,329 @@
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>
+#include <ctime>
+#include <limits>
+#include <fstream>
+
+using namespace std;
+
+template <class T>
+void initArray(T* arr, int size) {
+    for (int i = 0; i < size; i++) {
+        while (true) {
+            cout << "Enter element [" << i << "]: ";
+            if (cin >> arr[i]) {
+                break;
+            }
+            cout << "Input error. Try again.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+    }
+}
+
+void initArray(int* arr, int size) {
+    for (int i = 0; i < size; i++) {
+        while (true) {
+            cout << "Enter element [" << i << "] (>10): ";
+            if (!(cin >> arr[i])) {
+                cout << "Input error. Try again.\n";
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                continue;
+            }
+            if (arr[i] <= 10) {
+                cout << "числа должны быть больше 10\n";
+                continue;
+            }
+            break;
+        }
+    }
+}
+
+template <class T>
+int countZero(T* arr, int size) {
+    int count = 0;
+    for (int i = 0; i < size; i++) {
+        if (arr[i] == 0) {
+            count++;
+        }
+    }
+    return count;
+}
+
+template <class T>
+void printArray(T* arr, int size) {
+    for (int i = 0; i < size; i++) {
+        cout << setw(10) << arr[i];
+    }
+    cout << endl;
+}
+
+void saveAll(int* intArr, int sizeInt, double* doubleArr, int sizeDouble) {
+    ofstream f("all.txt");
+    if (!f) {
+        cout << "File error.\n";
+        return;
+    }
+
+    f << sizeInt << endl;
+    for (int i = 0; i < sizeInt; i++) {
+        f << intArr[i] << " ";
+    }
+    f << endl;
+
+    f << sizeDouble << endl;
+    for (int i = 0; i < sizeDouble; i++) {
+        f << doubleArr[i] << " ";
+    }
+
+    f.close();
+    cout << "All data saved.\n";
+}
+
+void loadAll(int*& intArr, int& sizeInt, double*& doubleArr, int& sizeDouble) {
+    ifstream f("all.txt");
+    if (!f) {
+        cout << "No saved data.\n";
+        return;
+    }
+
+    delete[] intArr;
+    delete[] doubleArr;
+
+    f >> sizeInt;
+    intArr = new int[sizeInt];
+    for (int i = 0; i < sizeInt; i++) {
+        f >> intArr[i];
+    }
+
+    f >> sizeDouble;
+    doubleArr = new double[sizeDouble];
+    for (int i = 0; i < sizeDouble; i++) {
+        f >> doubleArr[i];
+    }
+
+    f.close();
+
+    cout << "\nLoaded int array:\n";
+    printArray(intArr, sizeInt);
+
+    cout << "Number of zero elements: " << countZero(intArr, sizeInt) << endl;
+
+    cout << "\nLoaded double array:\n";
+    printArray(doubleArr, sizeDouble);
+
+    cout << "Number of zero elements: " << countZero(doubleArr, sizeDouble) << endl;
+}
+
+template <class T>
+class arrayNum {
+private:
+    int n;
+    T* Bp;
+    T* Tp;
+
+public:
+    arrayNum(int size) {
+        n = size;
+        Bp = new T[n];
+        Tp = Bp;
+
+        for (int i = 0; i < n; i++) {
+            *Tp = (T)(rand() % 41 - 20);
+            Tp++;
+        }
+
+        Tp = Bp;
+    }
+
+    ~arrayNum() {
+        delete[] Bp;
+    }
+
+    void show() {
+        Tp = Bp;
+        for (int i = 0; i < n; i++) {
+            cout << setw(10) << *Tp;
+            Tp++;
+            if ((i + 1) % 5 == 0) {
+                cout << endl;
+            }
+        }
+        if (n % 5 != 0) {
+            cout << endl;
+        }
+        Tp = Bp;
+    }
+
+    T** positive(int& count) {
+        count = 0;
+        Tp = Bp;
+
+        for (int i = 0; i < n; i++) {
+            if (*Tp > 0) {
+                count++;
+            }
+            Tp++;
+        }
+
+        Tp = Bp;
+
+        if (count == 0) {
+            return NULL;
+        }
+
+        T** posArr = new T * [count];
+        int j = 0;
+
+        for (int i = 0; i < n; i++) {
+            if (*Tp > 0) {
+                posArr[j] = Tp;
+                j++;
+            }
+            Tp++;
+        }
+
+        Tp = Bp;
+        return posArr;
+    }
+};
+
+int main() {
+    srand((unsigned)time(0));
+
+    int choice;
+    int* intArr = NULL;
+    double* doubleArr = NULL;
+    int sizeInt = 0;
+    int sizeDouble = 0;
+
+    do {
+        cout << "\n========== MENU ==========\n";
+        cout << "1. Template functions for int\n";
+        cout << "2. Template functions for double\n";
+        cout << "3. Template class for int\n";
+        cout << "4. Template class for double\n";
+        cout << "5. Save ALL\n";
+        cout << "6. Load ALL\n";
+        cout << "0. Exit\n";
+        cout << "Choose: ";
+        cin >> choice;
+
+        switch (choice) {
+        case 1: {
+            cout << "Enter size of int array: ";
+            cin >> sizeInt;
+
+            delete[] intArr;
+            intArr = new int[sizeInt];
+
+            cout << "\nInitialization of int array:\n";
+            initArray(intArr, sizeInt);
+
+            cout << "\nInt array:\n";
+            printArray(intArr, sizeInt);
+
+            cout << "Number of zero elements: " << countZero(intArr, sizeInt) << endl;
+            break;
+        }
+
+        case 2: {
+            cout << "Enter size of double array: ";
+            cin >> sizeDouble;
+
+            delete[] doubleArr;
+            doubleArr = new double[sizeDouble];
+
+            cout << "\nInitialization of double array:\n";
+            initArray(doubleArr, sizeDouble);
+
+            cout << "\nDouble array:\n";
+            printArray(doubleArr, sizeDouble);
+
+            cout << "Number of zero elements: " << countZero(doubleArr, sizeDouble) << endl;
+            break;
+        }
+
+        case 3: {
+            int size;
+            cout << "Enter size of class int array: ";
+            cin >> size;
+
+            arrayNum<int> arr(size);
+
+            cout << "\nRandom int array:\n";
+            arr.show();
+
+            int count = 0;
+            int** posArr = arr.positive(count);
+
+            if (count == 0) {
+                cout << "No positive elements.\n";
+            }
+            else {
+                cout << "Positive elements:\n";
+                for (int i = 0; i < count; i++) {
+                    cout << setw(10) << *posArr[i];
+                }
+                cout << endl;
+                delete[] posArr;
+            }
+            break;
+        }
+
+        case 4: {
+            int size;
+            cout << "Enter size of class double array: ";
+            cin >> size;
+
+            arrayNum<double> arr(size);
+
+            cout << "\nRandom double array:\n";
+            arr.show();
+
+            int count = 0;
+            double** posArr = arr.positive(count);
+
+            if (count == 0) {
+                cout << "No positive elements.\n";
+            }
+            else {
+                cout << "Positive elements:\n";
+                for (int i = 0; i < count; i++) {
+                    cout << setw(10) << *posArr[i];
+                }
+                cout << endl;
+                delete[] posArr;
+            }
+            break;
+        }
+
+        case 5:
+            if (intArr != NULL && doubleArr != NULL) {
+                saveAll(intArr, sizeInt, doubleArr, sizeDouble);
+            }
+            else {
+                cout << "Initialize int and double arrays first.\n";
+            }
+            break;
+
+        case 6:
+            loadAll(intArr, sizeInt, doubleArr, sizeDouble);
+            break;
+
+        case 0:
+            break;
+
+        default:
+            cout << "Wrong choice.\n";
+        }
+
+    } while (choice != 0);
+
+    delete[] intArr;
+    delete[] doubleArr;
+
+    return 0;
+}
