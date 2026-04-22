@@ -1,0 +1,359 @@
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <ctime>
+#include <cstdlib>
+
+using namespace std;
+
+class Point {
+private:
+    float x;
+    float y;
+
+public:
+    Point() {
+        x = 0;
+        y = 0;
+    }
+
+    Point(float x, float y) {
+        this->x = x;
+        this->y = y;
+    }
+
+    float getX() const {
+        return x;
+    }
+
+    float getY() const {
+        return y;
+    }
+
+    void setX(float x) {
+        this->x = x;
+    }
+
+    void setY(float y) {
+        this->y = y;
+    }
+
+    void print() const {
+        cout << "(" << x << ", " << y << ")";
+    }
+};
+
+class Circle {
+private:
+    Point center;
+    float radius;
+
+public:
+    Circle() {
+        center = Point(0, 0);
+        radius = 1;
+    }
+
+    Circle(Point center, float radius) {
+        this->center = center;
+        this->radius = radius > 0 ? radius : 1;
+    }
+
+    Point getCenter() const {
+        return center;
+    }
+
+    float getRadius() const {
+        return radius;
+    }
+
+    void setCenter(Point center) {
+        this->center = center;
+    }
+
+    void setRadius(float radius) {
+        if (radius > 0)
+            this->radius = radius;
+    }
+
+    float getLength() const {
+        return 2.0f * 3.14159265f * radius;
+    }
+
+    void print() const {
+        cout << "Center = ";
+        center.print();
+        cout << ", R = " << radius << ", L = " << getLength() << endl;
+    }
+
+    static void sortByRadius(Circle arr[], int size, bool ascending) {
+        for (int i = 0; i < size - 1; i++) {
+            for (int j = 0; j < size - i - 1; j++) {
+                bool needSwap;
+                if (ascending)
+                    needSwap = arr[j].getRadius() > arr[j + 1].getRadius();
+                else
+                    needSwap = arr[j].getRadius() < arr[j + 1].getRadius();
+
+                if (needSwap) {
+                    Circle temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                }
+            }
+        }
+    }
+};
+
+float rnd(float a, float b) {
+    return a + (float)rand() / RAND_MAX * (b - a);
+}
+
+bool isPointOnCircle(const Point& p, const Circle& c) {
+    float dx = p.getX() - c.getCenter().getX();
+    float dy = p.getY() - c.getCenter().getY();
+    float d = sqrt(dx * dx + dy * dy);
+    return fabs(d - c.getRadius()) < 0.0001f;
+}
+
+void initArrays(Circle staticArr[], Circle* dynamicArr, int n) {
+    for (int i = 0; i < n; i++) {
+        staticArr[i] = Circle(Point(rnd(-10, 10), rnd(-10, 10)), rnd(1, 10));
+        dynamicArr[i] = Circle(Point(rnd(-10, 10), rnd(-10, 10)), rnd(1, 10));
+    }
+}
+
+void printArray(Circle arr[], int n) {
+    for (int i = 0; i < n; i++) {
+        cout << i + 1 << ") ";
+        arr[i].print();
+    }
+}
+
+void printStaticByLengthGreater(Circle arr[], int n, float value) {
+    bool found = false;
+    for (int i = 0; i < n; i++) {
+        if (arr[i].getLength() > value) {
+            arr[i].print();
+            found = true;
+        }
+    }
+    if (!found)
+        cout << "No circles found." << endl;
+}
+
+void printDynamicByLengthLess(Circle arr[], int n, float value) {
+    bool found = false;
+    for (int i = 0; i < n; i++) {
+        if (arr[i].getLength() < value) {
+            arr[i].print();
+            found = true;
+        }
+    }
+    if (!found)
+        cout << "No circles found." << endl;
+}
+
+void findPointOnCircles(Circle arr[], int n, const Point& p, const char* name) {
+    bool found = false;
+    cout << name << ":" << endl;
+    for (int i = 0; i < n; i++) {
+        if (isPointOnCircle(p, arr[i])) {
+            arr[i].print();
+            found = true;
+        }
+    }
+    if (!found)
+        cout << "No circles found." << endl;
+}
+
+void saveToFile(const char* filename, Circle staticArr[], Circle dynamicArr[], int n, const Point& p) {
+    ofstream fout(filename);
+    if (!fout) {
+        cout << "File open error." << endl;
+        return;
+    }
+
+    fout << n << endl;
+    fout << p.getX() << " " << p.getY() << endl;
+
+    for (int i = 0; i < n; i++) {
+        fout << staticArr[i].getCenter().getX() << " "
+             << staticArr[i].getCenter().getY() << " "
+             << staticArr[i].getRadius() << endl;
+    }
+
+    for (int i = 0; i < n; i++) {
+        fout << dynamicArr[i].getCenter().getX() << " "
+             << dynamicArr[i].getCenter().getY() << " "
+             << dynamicArr[i].getRadius() << endl;
+    }
+
+    fout.close();
+    cout << "Data saved." << endl;
+}
+
+bool loadFromFile(const char* filename, Circle staticArr[], Circle dynamicArr[], int n, Point& p) {
+    ifstream fin(filename);
+    if (!fin) {
+        cout << "File open error." << endl;
+        return false;
+    }
+
+    int sizeFromFile;
+    fin >> sizeFromFile;
+
+    if (sizeFromFile != n) {
+        cout << "Array size mismatch." << endl;
+        fin.close();
+        return false;
+    }
+
+    float px, py;
+    fin >> px >> py;
+    p = Point(px, py);
+
+    for (int i = 0; i < n; i++) {
+        float x, y, r;
+        fin >> x >> y >> r;
+        staticArr[i] = Circle(Point(x, y), r);
+    }
+
+    for (int i = 0; i < n; i++) {
+        float x, y, r;
+        fin >> x >> y >> r;
+        dynamicArr[i] = Circle(Point(x, y), r);
+    }
+
+    fin.close();
+    cout << "Data loaded." << endl;
+    return true;
+}
+
+int main() {
+    srand((unsigned)time(0));
+
+    const int N = 6;
+    const char* FILE_NAME = "variant1_data.txt";
+
+    Circle staticArr[N];
+    Circle* dynamicArr = new Circle[N];
+    Point p;
+
+    bool initialized = false;
+    int choice;
+
+    do {
+        cout << "\n===== MENU VARIANT 1 =====" << endl;
+        cout << "1. Initialize arrays and point" << endl;
+        cout << "2. Show static array" << endl;
+        cout << "3. Show dynamic array" << endl;
+        cout << "4. Sort static array ascending by radius" << endl;
+        cout << "5. Sort dynamic array descending by radius" << endl;
+        cout << "6. Show static circles with length > value" << endl;
+        cout << "7. Show dynamic circles with length < value" << endl;
+        cout << "8. Show point" << endl;
+        cout << "9. Find circles where point lies on circumference" << endl;
+        cout << "10. Save data to file" << endl;
+        cout << "11. Load data from file" << endl;
+        cout << "0. Exit" << endl;
+        cout << "Choose: ";
+        cin >> choice;
+
+        switch (choice) {
+        case 1:
+            initArrays(staticArr, dynamicArr, N);
+            p = Point(rnd(-10, 10), rnd(-10, 10));
+            initialized = true;
+            cout << "Data initialized." << endl;
+            break;
+
+        case 2:
+            if (!initialized) cout << "Initialize data first." << endl;
+            else printArray(staticArr, N);
+            break;
+
+        case 3:
+            if (!initialized) cout << "Initialize data first." << endl;
+            else printArray(dynamicArr, N);
+            break;
+
+        case 4:
+            if (!initialized) cout << "Initialize data first." << endl;
+            else {
+                Circle::sortByRadius(staticArr, N, true);
+                cout << "Static array sorted ascending." << endl;
+            }
+            break;
+
+        case 5:
+            if (!initialized) cout << "Initialize data first." << endl;
+            else {
+                Circle::sortByRadius(dynamicArr, N, false);
+                cout << "Dynamic array sorted descending." << endl;
+            }
+            break;
+
+        case 6:
+            if (!initialized) cout << "Initialize data first." << endl;
+            else {
+                float value;
+                cout << "Enter value: ";
+                cin >> value;
+                printStaticByLengthGreater(staticArr, N, value);
+            }
+            break;
+
+        case 7:
+            if (!initialized) cout << "Initialize data first." << endl;
+            else {
+                float value;
+                cout << "Enter value: ";
+                cin >> value;
+                printDynamicByLengthLess(dynamicArr, N, value);
+            }
+            break;
+
+        case 8:
+            if (!initialized) cout << "Initialize data first." << endl;
+            else {
+                cout << "Point = ";
+                p.print();
+                cout << endl;
+            }
+            break;
+
+        case 9:
+            if (!initialized) cout << "Initialize data first." << endl;
+            else {
+                cout << "Point = ";
+                p.print();
+                cout << endl;
+                findPointOnCircles(staticArr, N, p, "Static array");
+                findPointOnCircles(dynamicArr, N, p, "Dynamic array");
+            }
+            break;
+
+        case 10:
+            if (!initialized) cout << "Initialize data first." << endl;
+            else saveToFile(FILE_NAME, staticArr, dynamicArr, N, p);
+            break;
+
+        case 11:
+            if (loadFromFile(FILE_NAME, staticArr, dynamicArr, N, p))
+                initialized = true;
+            break;
+
+        case 0:
+            cout << "Exit." << endl;
+            break;
+
+        default:
+            cout << "Wrong choice." << endl;
+        }
+
+    } while (choice != 0);
+
+    delete[] dynamicArr;
+    return 0;
+}
