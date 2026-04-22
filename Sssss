@@ -1,0 +1,152 @@
+#include <iostream>
+#include <cmath>
+#include <ctime>
+#include <cstdlib>
+
+using namespace std;
+
+class Point {
+private:
+    float x, y;
+
+public:
+    Point(float x = 0, float y = 0) {
+        this->x = x;
+        this->y = y;
+    }
+
+    float getX() const { return x; }
+    float getY() const { return y; }
+
+    void setX(float x) { this->x = x; }
+    void setY(float y) { this->y = y; }
+
+    void print() const {
+        cout << "(" << x << ", " << y << ")";
+    }
+};
+
+class Circle {
+private:
+    Point center;
+    float radius;
+
+public:
+    Circle(Point center = Point(), float radius = 1) {
+        this->center = center;
+        this->radius = (radius > 0) ? radius : 1;
+    }
+
+    Point getCenter() const { return center; }
+    float getRadius() const { return radius; }
+
+    void setCenter(Point center) { this->center = center; }
+    void setRadius(float radius) {
+        if (radius > 0) this->radius = radius;
+    }
+
+    float length() const {
+        return 2 * 3.14159265f * radius;
+    }
+
+    void print() const {
+        cout << "Center = ";
+        center.print();
+        cout << ", R = " << radius << ", L = " << length() << endl;
+    }
+
+    static void sortByRadius(Circle arr[], int n, bool asc) {
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                bool ok = asc ? arr[j].getRadius() > arr[j + 1].getRadius()
+                              : arr[j].getRadius() < arr[j + 1].getRadius();
+                if (ok) {
+                    Circle t = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = t;
+                }
+            }
+        }
+    }
+};
+
+float rnd(float a, float b) {
+    return a + (float)rand() / RAND_MAX * (b - a);
+}
+
+bool isOnCircle(const Point& p, const Circle& c) {
+    float dx = p.getX() - c.getCenter().getX();
+    float dy = p.getY() - c.getCenter().getY();
+    return fabs(dx * dx + dy * dy - c.getRadius() * c.getRadius()) < 0.0001f;
+}
+
+void printArray(Circle arr[], int n, const char* title) {
+    cout << title << endl;
+    for (int i = 0; i < n; i++) arr[i].print();
+    cout << endl;
+}
+
+int main() {
+    srand((unsigned)time(0));
+
+    const int N = 5;
+    Circle a[N];
+    Circle* b = new Circle[N];
+
+    for (int i = 0; i < N; i++) {
+        a[i] = Circle(Point(rnd(-10, 10), rnd(-10, 10)), rnd(1, 10));
+        b[i] = Circle(Point(rnd(-10, 10), rnd(-10, 10)), rnd(1, 10));
+    }
+
+    Circle::sortByRadius(a, N, true);
+    Circle::sortByRadius(b, N, false);
+
+    float value = 20;
+
+    cout << "Static array, length > " << value << ":" << endl;
+    for (int i = 0; i < N; i++)
+        if (a[i].length() > value)
+            a[i].print();
+
+    cout << endl;
+
+    cout << "Dynamic array, length < " << value << ":" << endl;
+    for (int i = 0; i < N; i++)
+        if (b[i].length() < value)
+            b[i].print();
+
+    cout << endl;
+
+    Point p(a[0].getCenter().getX() + a[0].getRadius(), a[0].getCenter().getY());
+
+    cout << "Point = ";
+    p.print();
+    cout << endl << endl;
+
+    bool found1 = false;
+    cout << "Static array:" << endl;
+    for (int i = 0; i < N; i++) {
+        if (isOnCircle(p, a[i])) {
+            a[i].print();
+            found1 = true;
+        }
+    }
+    if (!found1)
+        cout << "В статическом массиве нет ни одной окружности, на которой бы лежала заданная точка" << endl;
+
+    cout << endl;
+
+    bool found2 = false;
+    cout << "Dynamic array:" << endl;
+    for (int i = 0; i < N; i++) {
+        if (isOnCircle(p, b[i])) {
+            b[i].print();
+            found2 = true;
+        }
+    }
+    if (!found2)
+        cout << "В динамическом массиве нет ни одной окружности, на которой бы лежала заданная точка" << endl;
+
+    delete[] b;
+    return 0;
+}
