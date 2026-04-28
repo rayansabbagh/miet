@@ -1,0 +1,66 @@
+#include <iostream>
+using namespace std;
+
+class Account {
+protected:
+    double balance;
+
+public:
+    Account(double b) {
+        balance = b;
+    }
+
+    virtual void percent() = 0;
+    virtual void show() {
+        cout << "Balance: " << balance << endl;
+    }
+
+    virtual ~Account() {}
+};
+
+class Credit : public Account {
+public:
+    Credit(double b) : Account(b) {}
+
+    void percent() override {
+        balance = balance - balance * 0.05; 
+    }
+
+    void show() override {
+        cout << "Credit account: " << balance << endl;
+    }
+};
+
+class Debit : public Account {
+public:
+    Debit(double b) : Account(b) {}
+
+    void percent() override {
+        balance = balance + balance * 0.08; 
+    }
+
+    void show() override {
+        cout << "Debit account: " << balance << endl;
+    }
+};
+
+int main() {
+    Account* p;
+
+    Credit c(1000);
+    Debit d(1000);
+
+    p = &c;
+    p->show();
+    p->percent();
+    p->show();
+
+    cout << endl;
+
+    p = &d;
+    p->show();
+    p->percent();
+    p->show();
+
+    return 0;
+}
