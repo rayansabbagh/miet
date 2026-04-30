@@ -1,0 +1,43 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0.2, 3, 1200)
+k = np.argmin(abs(x - 1))
+
+y0 = np.zeros_like(x)
+
+def f(x, y):
+    return np.exp(-y) / (2*y + x*np.exp(-y))
+
+def cumtrapz_py(y, x):
+    dx = np.diff(x)
+    area = (y[:-1] + y[1:]) / 2 * dx
+    return np.concatenate(([0], np.cumsum(area)))
+
+Y = np.zeros((4, len(x)))
+
+Y[0] = cumtrapz_py(f(x, y0), x)
+Y[0] = Y[0] - Y[0, k]
+
+for n in range(1, 4):
+    Y[n] = cumtrapz_py(f(x, Y[n-1]), x)
+    Y[n] = Y[n] - Y[n, k]
+
+plt.figure()
+plt.plot(x, y0, 'k--', linewidth=1.2)
+plt.plot(x, Y[0], linewidth=1.5)
+plt.plot(x, Y[1], linewidth=1.5)
+plt.plot(x, Y[2], linewidth=1.5)
+plt.plot(x, Y[3], linewidth=1.5)
+plt.grid(True)
+plt.show()
+
+X, Yg = np.meshgrid(np.linspace(-3, 3, 600), np.linspace(-3, 3, 600))
+F = X*np.exp(-Yg) - Yg**2
+
+plt.figure()
+plt.contour(X, Yg, F, levels=np.arange(-2, 3.2, 0.2), linewidths=1)
+plt.contour(X, Yg, F, levels=[1], colors='r', linewidths=3)
+plt.axis('equal')
+plt.grid(True)
+plt.show()
