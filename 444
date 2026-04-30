@@ -1,0 +1,125 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import brentq
+
+def f(x, y):
+    return 3*np.exp(-x**2 - y**2)*np.sin(3*x)*np.cos(3*y)
+
+x = np.linspace(-2.5, 2.5, 600)
+y = np.linspace(-2.5, 2.5, 600)
+
+X, Y = np.meshgrid(x, y)
+Z = f(X, Y)
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(X, Y, Z)
+plt.show()
+
+def eqx(x):
+    return 3*np.cos(3*x) - 2*x*np.sin(3*x)
+
+def eqy(y):
+    return -2*y*np.cos(3*y) - 3*np.sin(3*y)
+
+def roots(fun, a, b, N=5000):
+    t = np.linspace(a, b, N)
+    vals = fun(t)
+    R = []
+    for i in range(len(t)-1):
+        if vals[i]*vals[i+1] < 0:
+            r = brentq(fun, t[i], t[i+1])
+            R.append(r)
+    return np.array(R)
+
+rx = roots(eqx, -2.5, 2.5)
+ry = roots(eqy, -2.5, 2.5)
+
+P1 = []
+
+for a in rx:
+    for b in ry:
+        P1.append([a, b])
+
+kx = []
+
+for k in range(-10, 11):
+    val = k*np.pi/3
+    if -2.5 <= val <= 2.5:
+        kx.append(val)
+
+ky = []
+
+for k in range(-10, 11):
+    val = np.pi/6 + k*np.pi/3
+    if -2.5 <= val <= 2.5:
+        ky.append(val)
+
+P2 = []
+
+for a in kx:
+    for b in ky:
+        P2.append([a, b])
+
+P = np.array(P1 + P2)
+P = np.round(P, 3)
+P = np.unique(P, axis=0)
+P = np.atleast_2d(P)
+
+print("stationary points:")
+
+for row in P:
+    print(f"({row[0]:.3f}, {row[1]:.3f})")
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(X, Y, Z, alpha=0.8)
+ax.scatter(P[:,0], P[:,1], f(P[:,0], P[:,1]), color='r', s=50)
+plt.show()
+
+zmax = np.max(Z)
+zmin = np.min(Z)
+
+i1, j1 = np.unravel_index(np.argmax(Z), Z.shape)
+i2, j2 = np.unravel_index(np.argmin(Z), Z.shape)
+
+point_max = np.array([X[i1,j1], Y[i1,j1], zmax])
+point_min = np.array([X[i2,j2], Y[i2,j2], zmin])
+
+print("zmax =", round(zmax, 3))
+print("zmin =", round(zmin, 3))
+print("point_max =", np.round(point_max, 3))
+print("point_min =", np.round(point_min, 3))
+
+plt.figure()
+plt.contourf(X, Y, Z, levels=40)
+plt.colorbar()
+plt.gca().set_aspect('equal', adjustable='box')
+plt.grid(True)
+plt.show()
+
+plt.figure()
+plt.contour(X, Y, Z, levels=40)
+plt.grid(True)
+plt.gca().set_aspect('equal', adjustable='box')
+
+xx = np.linspace(-np.sqrt(1.5), np.sqrt(1.5), 2000)
+yy = xx**2 + 1
+
+plt.plot(xx, yy, 'r', linewidth=3)
+
+zz = f(xx, yy)
+
+k1 = np.argmax(zz)
+k2 = np.argmin(zz)
+
+plt.plot(xx[k1], yy[k1], 'ro')
+plt.plot(xx[k2], yy[k2], 'ro')
+
+plt.show()
+
+point_cond_max = np.array([xx[k1], yy[k1], zz[k1]])
+point_cond_min = np.array([xx[k2], yy[k2], zz[k2]])
+
+print("point_cond_max =", np.round(point_cond_max, 3))
+print("point_cond_min =", np.round(point_cond_min, 3))
