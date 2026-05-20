@@ -1,0 +1,581 @@
+#include <iostream>
+#include <cstring>
+#include <ctime>
+
+using namespace std;
+
+char* strCopy(const char* s) {
+    char* p = new char[strlen(s) + 1];
+    strcpy(p, s);
+    return p;
+}
+
+class Category {
+private:
+    int code;
+    char* name;
+
+public:
+    Category();
+    Category(int code, const char* name);
+    Category(const Category& other);
+    ~Category();
+
+    Category& operator=(const Category& other);
+
+    void setCode(int code);
+    void setName(const char* name);
+
+    int getCode() const;
+    char* getName() const;
+};
+
+class Product {
+private:
+    int code;
+    char* name;
+    float baseCost;
+    Category category;
+
+public:
+    Product();
+    Product(int code, const char* name, float baseCost, Category category);
+    Product(const Product& other);
+    ~Product();
+
+    Product& operator=(const Product& other);
+
+    void setCode(int code);
+    void setName(const char* name);
+    void setBaseCost(float baseCost);
+    void setCategory(Category category);
+
+    int getCode() const;
+    char* getName() const;
+    float getBaseCost() const;
+    Category getCategory() const;
+};
+
+class Buyer {
+protected:
+    char* firstName;
+    char* lastName;
+    char* phone;
+    float baseDiscount;
+
+public:
+    Buyer();
+    Buyer(const char* firstName, const char* lastName, const char* phone, float baseDiscount);
+    virtual ~Buyer();
+
+    void setFirstName(const char* firstName);
+    void setLastName(const char* lastName);
+    void setPhone(const char* phone);
+    void setBaseDiscount(float baseDiscount);
+
+    char* getFirstName() const;
+    char* getLastName() const;
+    char* getPhone() const;
+    float getBaseDiscount() const;
+
+    virtual char* getBuyerCategory() const = 0;
+    virtual float calculateDiscount(Product product) const = 0;
+    float calculateFinalCost(Product product) const;
+};
+
+class RegularBuyer : public Buyer {
+public:
+    RegularBuyer();
+    RegularBuyer(const char* firstName, const char* lastName, const char* phone, float baseDiscount);
+    ~RegularBuyer();
+
+    char* getBuyerCategory() const;
+    float calculateDiscount(Product product) const;
+};
+
+class PensionerBuyer : public Buyer {
+private:
+    float additionalDiscount;
+    int startHour;
+    int endHour;
+
+public:
+    PensionerBuyer();
+    PensionerBuyer(const char* firstName, const char* lastName, const char* phone,
+                   float baseDiscount, float additionalDiscount, int startHour, int endHour);
+    ~PensionerBuyer();
+
+    void setAdditionalDiscount(float additionalDiscount);
+    void setStartHour(int startHour);
+    void setEndHour(int endHour);
+
+    float getAdditionalDiscount() const;
+    int getStartHour() const;
+    int getEndHour() const;
+
+    char* getBuyerCategory() const;
+    float calculateDiscount(Product product) const;
+};
+
+class VipBuyer : public Buyer {
+private:
+    int* favoriteProducts;
+    int favoriteCount;
+    float additionalDiscount;
+
+public:
+    VipBuyer();
+    VipBuyer(const char* firstName, const char* lastName, const char* phone,
+             float baseDiscount, int* favoriteProducts, int favoriteCount, float additionalDiscount);
+    ~VipBuyer();
+
+    void setFavoriteProducts(int* favoriteProducts, int favoriteCount);
+    void setAdditionalDiscount(float additionalDiscount);
+
+    int* getFavoriteProducts() const;
+    int getFavoriteCount() const;
+    float getAdditionalDiscount() const;
+
+    bool isFavoriteProduct(int code) const;
+    char* getBuyerCategory() const;
+    float calculateDiscount(Product product) const;
+};
+
+Category::Category() {
+    code = 0;
+    name = strCopy("");
+}
+
+Category::Category(int code, const char* name) {
+    this->code = code;
+    this->name = strCopy(name);
+}
+
+Category::Category(const Category& other) {
+    code = other.code;
+    name = strCopy(other.name);
+}
+
+Category::~Category() {
+    delete[] name;
+}
+
+Category& Category::operator=(const Category& other) {
+    if (this != &other) {
+        code = other.code;
+        delete[] name;
+        name = strCopy(other.name);
+    }
+    return *this;
+}
+
+void Category::setCode(int code) {
+    this->code = code;
+}
+
+void Category::setName(const char* name) {
+    delete[] this->name;
+    this->name = strCopy(name);
+}
+
+int Category::getCode() const {
+    return code;
+}
+
+char* Category::getName() const {
+    return name;
+}
+
+Product::Product() : category() {
+    code = 0;
+    name = strCopy("");
+    baseCost = 0;
+}
+
+Product::Product(int code, const char* name, float baseCost, Category category) : category(category) {
+    this->code = code;
+    this->name = strCopy(name);
+    this->baseCost = baseCost;
+}
+
+Product::Product(const Product& other) : category(other.category) {
+    code = other.code;
+    name = strCopy(other.name);
+    baseCost = other.baseCost;
+}
+
+Product::~Product() {
+    delete[] name;
+}
+
+Product& Product::operator=(const Product& other) {
+    if (this != &other) {
+        code = other.code;
+        delete[] name;
+        name = strCopy(other.name);
+        baseCost = other.baseCost;
+        category = other.category;
+    }
+    return *this;
+}
+
+void Product::setCode(int code) {
+    this->code = code;
+}
+
+void Product::setName(const char* name) {
+    delete[] this->name;
+    this->name = strCopy(name);
+}
+
+void Product::setBaseCost(float baseCost) {
+    this->baseCost = baseCost;
+}
+
+void Product::setCategory(Category category) {
+    this->category = category;
+}
+
+int Product::getCode() const {
+    return code;
+}
+
+char* Product::getName() const {
+    return name;
+}
+
+float Product::getBaseCost() const {
+    return baseCost;
+}
+
+Category Product::getCategory() const {
+    return category;
+}
+
+Buyer::Buyer() {
+    firstName = strCopy("");
+    lastName = strCopy("");
+    phone = strCopy("");
+    baseDiscount = 0;
+}
+
+Buyer::Buyer(const char* firstName, const char* lastName, const char* phone, float baseDiscount) {
+    this->firstName = strCopy(firstName);
+    this->lastName = strCopy(lastName);
+    this->phone = strCopy(phone);
+    this->baseDiscount = baseDiscount;
+}
+
+Buyer::~Buyer() {
+    delete[] firstName;
+    delete[] lastName;
+    delete[] phone;
+}
+
+void Buyer::setFirstName(const char* firstName) {
+    delete[] this->firstName;
+    this->firstName = strCopy(firstName);
+}
+
+void Buyer::setLastName(const char* lastName) {
+    delete[] this->lastName;
+    this->lastName = strCopy(lastName);
+}
+
+void Buyer::setPhone(const char* phone) {
+    delete[] this->phone;
+    this->phone = strCopy(phone);
+}
+
+void Buyer::setBaseDiscount(float baseDiscount) {
+    this->baseDiscount = baseDiscount;
+}
+
+char* Buyer::getFirstName() const {
+    return firstName;
+}
+
+char* Buyer::getLastName() const {
+    return lastName;
+}
+
+char* Buyer::getPhone() const {
+    return phone;
+}
+
+float Buyer::getBaseDiscount() const {
+    return baseDiscount;
+}
+
+float Buyer::calculateFinalCost(Product product) const {
+    float discount = calculateDiscount(product);
+    return product.getBaseCost() - product.getBaseCost() * discount / 100;
+}
+
+RegularBuyer::RegularBuyer() : Buyer() {
+}
+
+RegularBuyer::RegularBuyer(const char* firstName, const char* lastName, const char* phone, float baseDiscount)
+    : Buyer(firstName, lastName, phone, baseDiscount) {
+}
+
+RegularBuyer::~RegularBuyer() {
+}
+
+char* RegularBuyer::getBuyerCategory() const {
+    return (char*)"Regular buyer";
+}
+
+float RegularBuyer::calculateDiscount(Product product) const {
+    return baseDiscount;
+}
+
+PensionerBuyer::PensionerBuyer() : Buyer() {
+    additionalDiscount = 0;
+    startHour = 9;
+    endHour = 12;
+}
+
+PensionerBuyer::PensionerBuyer(const char* firstName, const char* lastName, const char* phone,
+                               float baseDiscount, float additionalDiscount, int startHour, int endHour)
+    : Buyer(firstName, lastName, phone, baseDiscount) {
+    this->additionalDiscount = additionalDiscount;
+    this->startHour = startHour;
+    this->endHour = endHour;
+}
+
+PensionerBuyer::~PensionerBuyer() {
+}
+
+void PensionerBuyer::setAdditionalDiscount(float additionalDiscount) {
+    this->additionalDiscount = additionalDiscount;
+}
+
+void PensionerBuyer::setStartHour(int startHour) {
+    this->startHour = startHour;
+}
+
+void PensionerBuyer::setEndHour(int endHour) {
+    this->endHour = endHour;
+}
+
+float PensionerBuyer::getAdditionalDiscount() const {
+    return additionalDiscount;
+}
+
+int PensionerBuyer::getStartHour() const {
+    return startHour;
+}
+
+int PensionerBuyer::getEndHour() const {
+    return endHour;
+}
+
+char* PensionerBuyer::getBuyerCategory() const {
+    return (char*)"Pensioner buyer";
+}
+
+float PensionerBuyer::calculateDiscount(Product product) const {
+    time_t now = time(0);
+    tm* ltm = localtime(&now);
+    int hour = ltm->tm_hour;
+
+    if (hour >= startHour && hour < endHour)
+        return baseDiscount + additionalDiscount;
+
+    return baseDiscount;
+}
+
+VipBuyer::VipBuyer() : Buyer() {
+    favoriteProducts = NULL;
+    favoriteCount = 0;
+    additionalDiscount = 0;
+}
+
+VipBuyer::VipBuyer(const char* firstName, const char* lastName, const char* phone,
+                   float baseDiscount, int* favoriteProducts, int favoriteCount, float additionalDiscount)
+    : Buyer(firstName, lastName, phone, baseDiscount) {
+    this->favoriteCount = favoriteCount;
+    this->favoriteProducts = new int[favoriteCount];
+
+    for (int i = 0; i < favoriteCount; i++)
+        this->favoriteProducts[i] = favoriteProducts[i];
+
+    this->additionalDiscount = additionalDiscount;
+}
+
+VipBuyer::~VipBuyer() {
+    delete[] favoriteProducts;
+}
+
+void VipBuyer::setFavoriteProducts(int* favoriteProducts, int favoriteCount) {
+    delete[] this->favoriteProducts;
+
+    this->favoriteCount = favoriteCount;
+    this->favoriteProducts = new int[favoriteCount];
+
+    for (int i = 0; i < favoriteCount; i++)
+        this->favoriteProducts[i] = favoriteProducts[i];
+}
+
+void VipBuyer::setAdditionalDiscount(float additionalDiscount) {
+    this->additionalDiscount = additionalDiscount;
+}
+
+int* VipBuyer::getFavoriteProducts() const {
+    return favoriteProducts;
+}
+
+int VipBuyer::getFavoriteCount() const {
+    return favoriteCount;
+}
+
+float VipBuyer::getAdditionalDiscount() const {
+    return additionalDiscount;
+}
+
+bool VipBuyer::isFavoriteProduct(int code) const {
+    for (int i = 0; i < favoriteCount; i++) {
+        if (favoriteProducts[i] == code)
+            return true;
+    }
+    return false;
+}
+
+char* VipBuyer::getBuyerCategory() const {
+    return (char*)"VIP buyer";
+}
+
+float VipBuyer::calculateDiscount(Product product) const {
+    if (isFavoriteProduct(product.getCode()))
+        return baseDiscount + additionalDiscount;
+
+    return baseDiscount;
+}
+
+Product* findProduct(Product* products, int count, int code) {
+    for (int i = 0; i < count; i++) {
+        if (products[i].getCode() == code)
+            return &products[i];
+    }
+    return NULL;
+}
+
+void printDateTime() {
+    time_t now = time(0);
+    tm* ltm = localtime(&now);
+
+    cout << 1900 + ltm->tm_year << "-";
+    cout << 1 + ltm->tm_mon << "-";
+    cout << ltm->tm_mday << " ";
+    cout << ltm->tm_hour << ":";
+    cout << ltm->tm_min << ":";
+    cout << ltm->tm_sec;
+}
+
+void printDiscount(Buyer* buyer, Product product) {
+    Category category = product.getCategory();
+
+    printDateTime();
+    cout << " ";
+    cout << buyer->getFirstName() << " " << buyer->getLastName() << " ";
+    cout << buyer->getBuyerCategory() << " ";
+    cout << category.getCode() << " ";
+    cout << category.getName() << " ";
+    cout << product.getCode() << " ";
+    cout << product.getName() << " ";
+    cout << buyer->calculateDiscount(product) << "%" << endl;
+}
+
+void printFinalCost(Buyer* buyer, Product product) {
+    Category category = product.getCategory();
+
+    printDateTime();
+    cout << " ";
+    cout << buyer->getFirstName() << " " << buyer->getLastName() << " ";
+    cout << buyer->getBuyerCategory() << " ";
+    cout << category.getCode() << " ";
+    cout << category.getName() << " ";
+    cout << product.getCode() << " ";
+    cout << product.getName() << " ";
+    cout << product.getBaseCost() << " ";
+    cout << buyer->calculateFinalCost(product) << endl;
+}
+
+int main() {
+    Category* categories = new Category[3];
+
+    categories[0] = Category(1, "Food");
+    categories[1] = Category(2, "Clothes");
+    categories[2] = Category(3, "Electronics");
+
+    Product* products = new Product[6];
+
+    products[0] = Product(101, "Bread", 45, categories[0]);
+    products[1] = Product(102, "Milk", 60, categories[0]);
+    products[2] = Product(201, "Shirt", 1200, categories[1]);
+    products[3] = Product(202, "Jacket", 4500, categories[1]);
+    products[4] = Product(301, "Phone", 22000, categories[2]);
+    products[5] = Product(302, "Headphones", 3500, categories[2]);
+
+    RegularBuyer* regularBuyers = new RegularBuyer[2] {
+        RegularBuyer("Ivan", "Ivanov", "111111", 3),
+        RegularBuyer("Petr", "Petrov", "222222", 5)
+    };
+
+    PensionerBuyer* pensionerBuyers = new PensionerBuyer[2] {
+        PensionerBuyer("Anna", "Sidorova", "333333", 7, 5, 9, 12),
+        PensionerBuyer("Olga", "Smirnova", "444444", 8, 6, 9, 12)
+    };
+
+    int fav1[2] = {101, 301};
+    int fav2[3] = {102, 202, 302};
+
+    VipBuyer* vipBuyers = new VipBuyer[2] {
+        VipBuyer("Maxim", "Volkov", "555555", 10, fav1, 2, 7),
+        VipBuyer("Elena", "Morozova", "666666", 12, fav2, 3, 8)
+    };
+
+    int code;
+
+    cout << "Enter product code: ";
+    cin >> code;
+
+    Product* selectedProduct = findProduct(products, 6, code);
+
+    if (selectedProduct == NULL) {
+        cout << "Product not found" << endl;
+    } else {
+        cout << endl;
+        cout << "Discounts:" << endl;
+
+        for (int i = 0; i < 2; i++)
+            printDiscount(&regularBuyers[i], *selectedProduct);
+
+        for (int i = 0; i < 2; i++)
+            printDiscount(&pensionerBuyers[i], *selectedProduct);
+
+        for (int i = 0; i < 2; i++)
+            printDiscount(&vipBuyers[i], *selectedProduct);
+
+        cout << endl;
+        cout << "Final costs:" << endl;
+
+        for (int i = 0; i < 2; i++)
+            printFinalCost(&regularBuyers[i], *selectedProduct);
+
+        for (int i = 0; i < 2; i++)
+            printFinalCost(&pensionerBuyers[i], *selectedProduct);
+
+        for (int i = 0; i < 2; i++)
+            printFinalCost(&vipBuyers[i], *selectedProduct);
+    }
+
+    delete[] categories;
+    delete[] products;
+    delete[] regularBuyers;
+    delete[] pensionerBuyers;
+    delete[] vipBuyers;
+
+    return 0;
+}
