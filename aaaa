@@ -1,0 +1,55 @@
+def extrem(f, x, y, z):
+    df_dx = sp.diff(f, x)
+    df_dy = sp.diff(f, y)
+    df_dz = sp.diff(f, z)
+
+    solutions = sp.solve([df_dx, df_dy, df_dz], [x, y, z], dict=True)
+
+    ans = {}
+
+    for sol in solutions:
+        substitutions = {x: sp.N(sol[x]), y: sp.N(sol[y]), z: sp.N(sol[z])}
+
+        df_dx2 = sp.diff(df_dx, x).subs(substitutions)
+        df_dy2 = sp.diff(df_dy, y).subs(substitutions)
+        df_dz2 = sp.diff(df_dz, z).subs(substitutions)
+
+        df_dxdy = sp.diff(df_dx, y).subs(substitutions)
+        df_dxdz = sp.diff(df_dx, z).subs(substitutions)
+        df_dydz = sp.diff(df_dy, z).subs(substitutions)
+
+        minor_1 = df_dx2
+
+        hess = sp.Matrix([
+            [df_dx2, df_dxdy, df_dxdz],
+            [df_dxdy, df_dy2, df_dydz],
+            [df_dxdz, df_dydz, df_dz2]
+        ])
+
+        minor_2 = sp.Matrix([
+            [df_dx2, df_dxdy],
+            [df_dxdy, df_dy2]
+        ]).det()
+
+        minor_3 = hess.det()
+
+        point = (float(substitutions[x]), float(substitutions[y]), float(substitutions[z]))
+
+        if minor_1 > 0 and minor_2 > 0 and minor_3 > 0:
+            ans[point] = 'local minimum'
+        elif minor_1 < 0 and minor_2 > 0 and minor_3 < 0:
+            ans[point] = 'local maximum'
+        else:
+            ans[point] = 'saddle point'
+
+    return ans
+
+
+x, y, z = sp.symbols('x y z')
+
+f = 8 - 6*x + 4*y - 2*z - x**2 - y**2 - z**2
+
+extremum_points = extrem(f, x, y, z)
+
+for point, extremum_type in extremum_points.items():
+    print(f"At point {point}, there is a {extremum_type}.")
