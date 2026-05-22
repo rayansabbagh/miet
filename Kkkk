@@ -1,0 +1,27 @@
+x = np.linspace(1, np.e, 100)
+y1 = np.log(x)
+y2 = np.ones_like(x)
+x3 = np.ones_like(x)*np.e
+y3 = np.linspace(0,1,100)
+
+plt.plot(x, y1, label='y = log(x)')
+plt.plot(x, y2, label='y = 1')
+plt.plot(x3, y3, label='x = e')
+plt.fill_between(x, y1, y2, where=(y2 > y1), color='lightblue', alpha=0.5)
+plt.title('Region between y = log(x) and y = 1')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend()
+plt.grid()
+plt.show()
+
+x, y = sp.symbols('x y')
+f = sp.sqrt(4-3*y)/x
+
+Iy = sp.integrate(f, (y, sp.log(x), 1))
+Ix = sp.integrate(Iy, (x, 1, sp.E))
+print(f'I = {Ix}')
+
+Ix2 = sp.integrate(f, (x, 1, sp.exp(y)))
+Iy2 = sp.integrate(Ix2, (y, 0, 1))
+print(f'I = {Iy2}')
