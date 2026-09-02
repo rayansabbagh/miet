@@ -1,0 +1,188 @@
+package lab1;
+
+import java.util.Scanner;
+
+public class Variant5 {
+    static final int COUNT = 100000;
+    static volatile double control;
+
+    static class Model {
+        double sqrt(double number, double accuracy) {
+            double root = number / 2.0;
+
+            do {
+                root = (root + number / root) / 2.0;
+            } while (error(number, root) > accuracy);
+
+            return root;
+        }
+
+        double error(double number, double root) {
+            return Math.abs(root * root - number)
+                    / number * 100.0;
+        }
+
+        double time(
+                double number,
+                double accuracy,
+                boolean standard) {
+
+            double sum = 0;
+            long start = System.nanoTime();
+
+            for (int i = 0; i < COUNT; i++)
+                sum += standard
+                        ? Math.sqrt(number)
+                        : sqrt(number, accuracy);
+
+            long finish = System.nanoTime();
+            control = sum;
+
+            return (finish - start) / (double) COUNT;
+        }
+    }
+
+    static class View {
+        void start() {
+            System.out.println(
+                    "Enter 3 one-digit, 3 two-digit "
+                    + "and 3 three-digit numbers.");
+        }
+
+        void ask(int i, int min, int max) {
+            System.out.printf(
+                    "Number %d (%d-%d): ", i, min, max);
+        }
+
+        void error(int min, int max) {
+            System.out.printf(
+                    "Error! Enter a number from %d to %d.%n",
+                    min, max);
+        }
+
+        void header() {
+            System.out.printf(
+                    "%8s %10s %14s %12s %12s "
+                    + "%14s %12s %12s%n",
+                    "Number", "Accuracy", "Newton",
+                    "N error,%", "N time,ns", "Math.sqrt",
+                    "M error,%", "M time,ns");
+        }
+
+        void row(
+                double n, double a, double nr,
+                double ne, double nt, double mr,
+                double me, double mt) {
+
+            System.out.printf(
+                    "%8.2f %10.4g %14.9f %12.5g "
+                    + "%12.2f %14.9f %12.5g %12.2f%n",
+                    n, a, nr, ne, nt, mr, me, mt);
+        }
+
+        void result(double newton, double standard) {
+            System.out.printf(
+                    "Average Newton time: %.2f ns%n",
+                    newton / 45);
+
+            System.out.printf(
+                    "Average Math.sqrt time: %.2f ns%n",
+                    standard / 45);
+
+            System.out.println(
+                    newton < standard
+                            ? "Newton is faster."
+                            : "Math.sqrt is faster.");
+        }
+    }
+
+    static class Controller {
+        Model model = new Model();
+        View view = new View();
+        Scanner scanner = new Scanner(System.in);
+
+        double[] numbers = new double[9];
+
+        double[] accuracies = {
+                1, 0.1, 0.01, 0.001, 0.0001
+        };
+
+        double read(int i, int min, int max) {
+            while (true) {
+                view.ask(i, min, max);
+
+                try {
+                    double number = Double.parseDouble(
+                            scanner.nextLine()
+                                    .trim()
+                                    .replace(',', '.'));
+
+                    if (Double.isFinite(number)
+                            && number >= min
+                            && number <= max)
+                        return number;
+
+                } catch (NumberFormatException exception) {
+                }
+
+                view.error(min, max);
+            }
+        }
+
+        void start() {
+            view.start();
+
+            for (int i = 0; i < 9; i++) {
+                int min = i < 3 ? 1 : i < 6 ? 10 : 100;
+                int max = i < 3 ? 9 : i < 6 ? 99 : 999;
+
+                numbers[i] = read(i + 1, min, max);
+            }
+
+            double newtonTotal = 0;
+            double mathTotal = 0;
+
+            view.header();
+
+            for (double number : numbers) {
+                for (double accuracy : accuracies) {
+                    double nr =
+                            model.sqrt(number, accuracy);
+
+                    double mr = Math.sqrt(number);
+
+                    double nt =
+                            model.time(
+                                    number,
+                                    accuracy,
+                                    false);
+
+                    double mt =
+                            model.time(
+                                    number,
+                                    accuracy,
+                                    true);
+
+                    newtonTotal += nt;
+                    mathTotal += mt;
+
+                    view.row(
+                            number,
+                            accuracy,
+                            nr,
+                            model.error(number, nr),
+                            nt,
+                            mr,
+                            model.error(number, mr),
+                            mt);
+                }
+            }
+
+            view.result(newtonTotal, mathTotal);
+        }
+    }
+
+    public static void main(String[] args) {
+        new Controller().start();
+    }
+}
