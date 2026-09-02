@@ -1,0 +1,104 @@
+#include <algorithm>
+#include <chrono>
+#include <iomanip>
+#include <iostream>
+#include <random>
+#include <vector>
+
+using namespace std;
+using Clock = chrono::steady_clock;
+
+void shakerSort(vector<int>& a)
+{
+    int left = 0;
+    int right = a.size() - 1;
+
+    while (left < right)
+    {
+        for (int i = left; i < right; i++)
+        {
+            if (a[i] > a[i + 1])
+                swap(a[i], a[i + 1]);
+        }
+
+        right--;
+
+        for (int i = right; i > left; i--)
+        {
+            if (a[i] < a[i - 1])
+                swap(a[i], a[i - 1]);
+        }
+
+        left++;
+    }
+}
+
+void shellSort(vector<int>& a)
+{
+    for (int gap = a.size() / 2; gap > 0; gap /= 2)
+    {
+        for (int i = gap; i < a.size(); i++)
+        {
+            int value = a[i];
+            int j = i;
+
+            while (j >= gap && a[j - gap] > value)
+            {
+                a[j] = a[j - gap];
+                j -= gap;
+            }
+
+            a[j] = value;
+        }
+    }
+}
+
+vector<int> createArray(int n, mt19937& generator)
+{
+    uniform_int_distribution<int> distribution(0, 1000000);
+    vector<int> a(n);
+
+    for (int& value : a)
+        value = distribution(generator);
+
+    return a;
+}
+
+template <typename SortFunction>
+double measureTime(int n, SortFunction sortFunction, mt19937& generator)
+{
+    vector<int> a = createArray(n, generator);
+
+    auto start = Clock::now();
+    sortFunction(a);
+    auto finish = Clock::now();
+
+    if (!is_sorted(a.begin(), a.end()))
+        return -1;
+
+    return chrono::duration<double>(finish - start).count();
+}
+
+int main()
+{
+    mt19937 generator(7);
+
+    vector<int> task3 = {900, 3000, 8500};
+    vector<int> task8 = {1800, 6000, 17000};
+
+    cout << fixed << setprecision(9);
+
+    cout << "Task 3\n";
+
+    for (int n : task3)
+        cout << n << " "
+             << measureTime(n, shakerSort, generator) << "\n";
+
+    cout << "\nTask 8\n";
+
+    for (int n : task8)
+        cout << n << " "
+             << measureTime(n, shellSort, generator) << "\n";
+
+    return 0;
+}
