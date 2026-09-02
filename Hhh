@@ -1,0 +1,80 @@
+#include <iostream>
+#include <vector>
+#include <chrono>
+#include <random>
+#include <algorithm>
+#include <iomanip>
+
+using namespace std;
+
+void shellSort(vector<int>& array)
+{
+    int n = array.size();
+
+    for (int gap = n / 2; gap > 0; gap /= 2)
+    {
+        for (int i = gap; i < n; i++)
+        {
+            int value = array[i];
+            int j = i;
+
+            while (j >= gap && array[j - gap] > value)
+            {
+                array[j] = array[j - gap];
+                j -= gap;
+            }
+
+            array[j] = value;
+        }
+    }
+}
+
+int main()
+{
+    vector<int> sizes = {1800, 6000, 17000};
+
+    mt19937 generator(7);
+    uniform_int_distribution<int> distribution(0, 1000000);
+
+    cout << "Лабораторная работа №1" << endl;
+    cout << "Часть 1" << endl;
+    cout << "Вариант 7" << endl;
+    cout << "Задание 8" << endl;
+    cout << "Метод Шелла" << endl << endl;
+
+    cout << fixed << setprecision(7);
+
+    for (int n : sizes)
+    {
+        vector<int> array(n);
+
+        for (int& value : array)
+        {
+            value = distribution(generator);
+        }
+
+        auto start = chrono::high_resolution_clock::now();
+
+        shellSort(array);
+
+        auto finish = chrono::high_resolution_clock::now();
+
+        double time = chrono::duration<double>(finish - start).count();
+
+        cout << "N = " << n << endl;
+        cout << "Время сортировки: " << time << " сек." << endl;
+
+        if (is_sorted(array.begin(), array.end()))
+        {
+            cout << "Проверка: сортировка выполнена правильно." << endl;
+        }
+        else
+        {
+            cout << "Проверка: ошибка сортировки." << endl;
+        }
+
+        cout << "----------------------------------------" << endl;
+    }
+
+    return 0;
+}
