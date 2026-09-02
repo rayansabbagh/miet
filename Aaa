@@ -1,0 +1,92 @@
+#include <algorithm>
+#include <chrono>
+#include <iomanip>
+#include <iostream>
+#include <random>
+#include <vector>
+
+using namespace std;
+using Clock = chrono::steady_clock;
+
+void insertionSort(vector<int>& a)
+{
+    for (int i = 1; i < a.size(); i++)
+    {
+        int key = a[i];
+        int j = i - 1;
+
+        while (j >= 0 && a[j] > key)
+        {
+            a[j + 1] = a[j];
+            j--;
+        }
+
+        a[j + 1] = key;
+    }
+}
+
+void shellSort(vector<int>& a)
+{
+    for (int gap = a.size() / 2; gap > 0; gap /= 2)
+    {
+        for (int i = gap; i < a.size(); i++)
+        {
+            int value = a[i];
+            int j = i;
+
+            while (j >= gap && a[j - gap] > value)
+            {
+                a[j] = a[j - gap];
+                j -= gap;
+            }
+
+            a[j] = value;
+        }
+    }
+}
+
+vector<int> createArray(int n, mt19937& generator)
+{
+    uniform_int_distribution<int> distribution(-1000000, 1000000);
+    vector<int> a(n);
+
+    for (int& value : a)
+        value = distribution(generator);
+
+    return a;
+}
+
+template <typename SortFunction>
+double measureTime(int n, SortFunction sortFunction, mt19937& generator)
+{
+    vector<int> a = createArray(n, generator);
+
+    auto start = Clock::now();
+    sortFunction(a);
+    auto finish = Clock::now();
+
+    if (!is_sorted(a.begin(), a.end()))
+        return -1;
+
+    return chrono::duration<double>(finish - start).count();
+}
+
+int main()
+{
+    mt19937 generator(8);
+
+    vector<int> task3 = {1200, 2000, 7500};
+    vector<int> task8 = {2400, 4000, 15000};
+
+    cout << fixed << setprecision(9);
+
+    cout << "Task 3\n";
+    for (int n : task3)
+        cout << n << " " << measureTime(n, insertionSort, generator) << "\n";
+
+    cout << "\nTask 8\n";
+    for (int n : task8)
+        cout << n << " " << measureTime(n, shellSort, generator) << "\n";
+
+    return 0;
+}
