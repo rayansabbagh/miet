@@ -1,0 +1,214 @@
+main
+
+#include <iostream>
+using namespace std;
+
+void question3();
+void question4();
+void question6();
+
+int main()
+{
+    int choice;
+
+    do
+    {
+        cout << "\n===== LAB 3 =====" << endl;
+        cout << "3 - Question 3" << endl;
+        cout << "4 - Question 4" << endl;
+        cout << "6 - Question 6" << endl;
+        cout << "0 - Exit" << endl;
+        cout << "Choose: ";
+
+        cin >> choice;
+
+        switch (choice)
+        {
+        case 3:
+            question3();
+            break;
+
+        case 4:
+            question4();
+            break;
+
+        case 6:
+            question6();
+            break;
+
+        case 0:
+            cout << "Exit" << endl;
+            break;
+
+        default:
+            cout << "Invalid choice" << endl;
+        }
+
+    } while (choice != 0);
+
+    return 0;
+}
+
+
+question3
+
+
+#include <iostream>
+#include <string>
+#include <limits>
+using namespace std;
+
+const int MAX_SIZE = 100;
+char Stack[MAX_SIZE];
+int top = -1;
+
+int PUSH(char c)
+{
+    if (top == MAX_SIZE - 1)
+        return 1;
+
+    Stack[++top] = c;
+    return 0;
+}
+
+char POP(int& code)
+{
+    if (top == -1)
+    {
+        code = 1;
+        return '\0';
+    }
+
+    code = 0;
+    return Stack[top--];
+}
+
+void question3()
+{
+    string s;
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    while (true)
+    {
+        cout << "\nEnter expression (space to exit): ";
+        getline(cin, s);
+
+        if (s == " ")
+            break;
+
+        top = -1;
+        bool correct = true;
+
+        for (char c : s)
+        {
+            if (c == '(')
+            {
+                if (PUSH(c) == 1)
+                {
+                    correct = false;
+                    break;
+                }
+            }
+            else if (c == ')')
+            {
+                int code;
+                POP(code);
+
+                if (code == 1)
+                {
+                    correct = false;
+                    break;
+                }
+            }
+        }
+
+        if (top != -1)
+            correct = false;
+
+        if (correct)
+            cout << "Correct expression" << endl;
+        else
+            cout << "Incorrect expression" << endl;
+    }
+}
+
+
+question4
+
+
+#include <iostream>
+using namespace std;
+
+double calcA(int n)
+{
+    if (n == 0)
+        return 1.0;
+
+    return (3.0 / n) * calcA(n - 1);
+}
+
+void question4()
+{
+    int n;
+
+    cout << "\nEnter n: ";
+    cin >> n;
+
+    if (n < 0)
+    {
+        cout << "n must be >= 0" << endl;
+        return;
+    }
+
+    cout << "a(" << n << ") = " << calcA(n) << endl;
+}
+
+
+question6
+
+
+#include <iostream>
+#include <chrono>
+using namespace std;
+using namespace chrono;
+
+void question6()
+{
+    int n;
+
+    cout << "\nEnter number of elements: ";
+    cin >> n;
+
+    if (n <= 0)
+    {
+        cout << "Number of elements must be > 0" << endl;
+        return;
+    }
+
+    double* a = new double[n];
+
+    auto start = high_resolution_clock::now();
+
+    a[0] = 1.0;
+
+    for (int i = 1; i < n; i++)
+    {
+        a[i] = a[i - 1] * 3.0 / i;
+    }
+
+    auto finish = high_resolution_clock::now();
+
+    cout << "\nArray elements:" << endl;
+
+    for (int i = 0; i < n; i++)
+    {
+        cout << "a[" << i << "] = " << a[i] << endl;
+    }
+
+    auto time = duration_cast<microseconds>(finish - start);
+
+    cout << "Time = " << time.count() << " microseconds" << endl;
+
+    delete[] a;
+}
