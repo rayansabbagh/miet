@@ -1,0 +1,326 @@
+main
+
+
+#include <iostream>
+
+using namespace std;
+
+void question4();
+void question6();
+
+int main() {
+    int choice;
+
+    cout << "Lab 4 - Spanning Tree Algorithms\n";
+    cout << "4 - Question 4\n";
+    cout << "6 - Question 6\n";
+    cout << "Choose: ";
+    cin >> choice;
+
+    if (choice == 4) {
+        question4();
+    }
+    else if (choice == 6) {
+        question6();
+    }
+    else {
+        cout << "Invalid choice.\n";
+    }
+
+    return 0;
+}
+
+
+question4
+
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <climits>
+
+using namespace std;
+
+struct Edge {
+    int u, v, w;
+};
+
+class DSU {
+private:
+    vector<int> parent;
+
+public:
+    DSU(int n) {
+        parent.resize(n + 1);
+
+        for (int i = 1; i <= n; i++) {
+            parent[i] = i;
+        }
+    }
+
+    int find(int x) {
+        if (parent[x] == x)
+            return x;
+
+        return parent[x] = find(parent[x]);
+    }
+
+    bool unite(int a, int b) {
+        a = find(a);
+        b = find(b);
+
+        if (a == b)
+            return false;
+
+        parent[b] = a;
+        return true;
+    }
+};
+
+void runKruskal(int n, vector<Edge> edges) {
+    sort(edges.begin(), edges.end(),
+        [](const Edge& a, const Edge& b) {
+            return a.w < b.w;
+        });
+
+    DSU dsu(n);
+    int total = 0;
+
+    cout << "\nKruskal:\n";
+
+    for (const Edge& e : edges) {
+        if (dsu.unite(e.u, e.v)) {
+            cout << e.u << " - " << e.v
+                << " : " << e.w << '\n';
+
+            total += e.w;
+        }
+    }
+
+    cout << "Total weight = " << total << '\n';
+}
+
+void runPrim(int n, const vector<Edge>& edges) {
+    vector<vector<pair<int, int>>> graph(n + 1);
+
+    for (const Edge& e : edges) {
+        graph[e.u].push_back({ e.v, e.w });
+        graph[e.v].push_back({ e.u, e.w });
+    }
+
+    vector<bool> used(n + 1, false);
+    used[1] = true;
+
+    int total = 0;
+
+    cout << "\nPrim:\n";
+
+    for (int i = 0; i < n - 1; i++) {
+        int minWeight = INT_MAX;
+        int from = -1;
+        int to = -1;
+
+        for (int u = 1; u <= n; u++) {
+            if (used[u]) {
+                for (const auto& edge : graph[u]) {
+                    int v = edge.first;
+                    int w = edge.second;
+
+                    if (!used[v] && w < minWeight) {
+                        minWeight = w;
+                        from = u;
+                        to = v;
+                    }
+                }
+            }
+        }
+
+        if (to == -1)
+            break;
+
+        used[to] = true;
+        total += minWeight;
+
+        cout << from << " - " << to
+            << " : " << minWeight << '\n';
+    }
+
+    cout << "Total weight = " << total << '\n';
+}
+
+void question4() {
+    int n, m;
+
+    cout << "\nQuestion 4\n";
+    cout << "Number of vertices: ";
+    cin >> n;
+
+    cout << "Number of edges: ";
+    cin >> m;
+
+    vector<Edge> edges;
+
+    cout << "Enter edges (u v weight):\n";
+
+    for (int i = 0; i < m; i++) {
+        Edge e;
+        cin >> e.u >> e.v >> e.w;
+
+        if (e.u < 1 || e.u > n || e.v < 1 || e.v > n) {
+            cout << "Invalid vertex. Vertices must be from 1 to "
+                << n << ".\n";
+            i--;
+            continue;
+        }
+
+        edges.push_back(e);
+    }
+
+    runKruskal(n, edges);
+    runPrim(n, edges);
+}
+
+
+question6
+
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <climits>
+
+using namespace std;
+
+struct Edge6 {
+    int u, v, w;
+};
+
+class DSU6 {
+private:
+    vector<int> parent;
+
+public:
+    DSU6(int n) {
+        parent.resize(n + 1);
+
+        for (int i = 1; i <= n; i++) {
+            parent[i] = i;
+        }
+    }
+
+    int find(int x) {
+        if (parent[x] == x)
+            return x;
+
+        return parent[x] = find(parent[x]);
+    }
+
+    bool unite(int a, int b) {
+        a = find(a);
+        b = find(b);
+
+        if (a == b)
+            return false;
+
+        parent[b] = a;
+        return true;
+    }
+};
+
+void kruskal6(int n, vector<Edge6> edges) {
+    sort(edges.begin(), edges.end(),
+        [](const Edge6& a, const Edge6& b) {
+            return a.w < b.w;
+        });
+
+    DSU6 dsu(n);
+    int total = 0;
+
+    cout << "\nKruskal:\n";
+
+    for (const Edge6& e : edges) {
+        if (dsu.unite(e.u, e.v)) {
+            cout << e.u << " - " << e.v
+                << " : " << e.w << '\n';
+
+            total += e.w;
+        }
+    }
+
+    cout << "Total weight = " << total << '\n';
+}
+
+void prim6(int n, const vector<Edge6>& edges) {
+    vector<vector<pair<int, int>>> graph(n + 1);
+
+    for (const Edge6& e : edges) {
+        graph[e.u].push_back({ e.v, e.w });
+        graph[e.v].push_back({ e.u, e.w });
+    }
+
+    vector<bool> used(n + 1, false);
+    used[1] = true;
+
+    int total = 0;
+
+    cout << "\nPrim:\n";
+
+    for (int i = 0; i < n - 1; i++) {
+        int minWeight = INT_MAX;
+        int from = -1;
+        int to = -1;
+
+        for (int u = 1; u <= n; u++) {
+            if (used[u]) {
+                for (const auto& edge : graph[u]) {
+                    int v = edge.first;
+                    int w = edge.second;
+
+                    if (!used[v] && w < minWeight) {
+                        minWeight = w;
+                        from = u;
+                        to = v;
+                    }
+                }
+            }
+        }
+
+        if (to == -1)
+            break;
+
+        used[to] = true;
+        total += minWeight;
+
+        cout << from << " - " << to
+            << " : " << minWeight << '\n';
+    }
+
+    cout << "Total weight = " << total << '\n';
+}
+
+void question6() {
+    int n = 8;
+
+    vector<Edge6> edges = {
+        {1, 2, 14},
+        {1, 6, 8},
+        {2, 3, 5},
+        {2, 6, 2},
+        {2, 4, 10},
+        {2, 5, 2},
+        {2, 8, 9},
+        {3, 8, 11},
+        {4, 5, 3},
+        {4, 6, 6},
+        {4, 7, 5},
+        {5, 7, 8},
+        {5, 8, 1},
+        {6, 7, 5},
+        {7, 8, 7}
+    };
+
+    cout << "\nQuestion 6 - Variant 8\n";
+
+    kruskal6(n, edges);
+    prim6(n, edges);
+}
