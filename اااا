@@ -1,0 +1,52 @@
+package lab2.model;
+
+/**
+ * Defines the possible target types.
+ */
+public enum TargetType {
+
+    /** Tank target. */
+    TANK,
+
+    /** Air-defense pickup target. */
+    AIR_DEFENSE_PICKUP,
+
+    /** Supply pickup target. */
+    SUPPLY_PICKUP,
+
+    /** Soldier target. */
+    SOLDIER,
+
+    /** Earth shelter target. */
+    EARTH_SHELTER,
+
+    /** Concrete shelter target. */
+    CONCRETE_SHELTER,
+
+    /** Strike drone target. */
+    STRIKE_DRONE
+}
+
+
+package lab2.model;
+
+/**
+ * Defines the available drone types.
+ */
+public enum DroneType {
+
+    /** Long-range drone. */
+    LONG_RANGE,
+
+    /** Interceptor drone. */
+    INTERCEPTOR,
+
+    /** Scout drone. */
+    SCOUT,
+
+    /** Cargo drone. */
+    CARGO,
+
+    /** Multipurpose drone. */
+    MULTIPURPOSE
+}
