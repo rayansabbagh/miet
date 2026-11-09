@@ -1,0 +1,671 @@
+feasability check
+
+
+package lab3.model;
+
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Checks resource feasibility under the original simulation rules.
+ * Drones are reused between targets and are not consumed.
+ */
+public class FeasibilityCheck {
+
+    /**
+     * Creates the feasibility checker.
+     */
+    public FeasibilityCheck() {
+    }
+
+    /**
+     * Selects the drone type used against a target.
+     *
+     * @param type target type
+     * @return selected drone type
+     */
+    public static DroneType selectDrone(
+            TargetType type) {
+
+        switch (type) {
+
+            case TANK:
+            case CONCRETE_SHELTER:
+                return DroneType.LONG_RANGE;
+
+            case AIR_DEFENSE_PICKUP:
+            case STRIKE_DRONE:
+                return DroneType.INTERCEPTOR;
+
+            case SOLDIER:
+                return DroneType.SCOUT;
+
+            default:
+                return DroneType.MULTIPURPOSE;
+        }
+    }
+
+    /**
+     * Returns the number of drones required for one target.
+     *
+     * @param type target type
+     * @return required drone count
+     */
+    public static int requiredDrones(
+            TargetType type) {
+
+        switch (type) {
+
+            case TANK:
+            case CONCRETE_SHELTER:
+                return 3;
+
+            case AIR_DEFENSE_PICKUP:
+            case EARTH_SHELTER:
+            case STRIKE_DRONE:
+                return 2;
+
+            default:
+                return 1;
+        }
+    }
+
+    /**
+     * Calculates missing drone counts.
+     * Uses the maximum requirement per type because
+     * the original simulation reuses drones between targets.
+     *
+     * @param database available drones
+     * @param targets targets to process
+     * @return missing drone counts by type
+     */
+    public Map<DroneType, Integer> findMissing(
+            DroneDatabase database,
+            List<Target> targets) {
+
+        Map<DroneType, Integer> required =
+                new EnumMap<DroneType, Integer>(
+                        DroneType.class);
+
+        for (Target target : targets) {
+
+            if (!target.isActive()) {
+                continue;
+            }
+
+            DroneType type =
+                    selectDrone(
+                            target.getType());
+
+            int count =
+                    requiredDrones(
+                            target.getType());
+
+            Integer previous =
+                    required.get(type);
+
+            if (previous == null
+                    || count > previous) {
+
+                required.put(type, count);
+            }
+        }
+
+        Map<DroneType, Integer> missing =
+                new EnumMap<DroneType, Integer>(
+                        DroneType.class);
+
+        for (Map.Entry<DroneType, Integer> entry
+                : required.entrySet()) {
+
+            int deficit =
+                    entry.getValue()
+                            - database.count(
+                                    entry.getKey());
+
+            if (deficit > 0) {
+
+                missing.put(
+                        entry.getKey(),
+                        deficit);
+            }
+        }
+
+        return missing;
+    }
+
+    /**
+     * Checks whether the current target-processing stage
+     * has sufficient drones and active reconnaissance.
+     * Does not guarantee base survival over future steps.
+     *
+     * @param database available drones
+     * @param targets targets to process
+     * @param scoutActive whether reconnaissance is active
+     * @return true if the processing stage is feasible
+     */
+    public boolean isSolvable(
+            DroneDatabase database,
+            List<Target> targets,
+            boolean scoutActive) {
+
+        return scoutActive
+                && findMissing(
+                        database,
+                        targets).isEmpty();
+    }
+
+    /**
+     * Adds the missing drones to the database.
+     *
+     * @param database database to update
+     * @param missing calculated drone deficits
+     * @param generator random object generator
+     */
+    public void addMissing(
+            DroneDatabase database,
+            Map<DroneType, Integer> missing,
+            RandomGenerator generator) {
+
+        for (Map.Entry<DroneType, Integer> entry
+                : missing.entrySet()) {
+
+            for (int i = 0;
+                 i < entry.getValue();
+                 i++) {
+
+                Drone drone =
+                        generator.generateDrone(
+                                database.size() + 1,
+                                entry.getKey());
+
+                database.addDrone(drone);
+            }
+        }
+    }
+}
+
+
+collection view
+
+package lab3.view;
+
+import java.util.List;
+import java.util.Locale;
+
+import lab3.model.ExperimentResult;
+import lab3.model.OperationStats;
+
+/**
+ * Formats and displays collection experiment results.
+ */
+public class CollectionView {
+
+    /**
+     * Creates the collection view.
+     */
+    public CollectionView() {
+    }
+
+    /**
+     * Formats one experiment result.
+     *
+     * @param result experiment result
+     * @return formatted result
+     */
+    public String formatResult(
+            ExperimentResult result) {
+
+        OperationStats add =
+                result.getAddStats();
+
+        OperationStats remove =
+                result.getRemoveStats();
+
+        return String.format(
+                Locale.ROOT,
+                "%s N=%d"
+                        + " | add Total=%d Mean=%.2f Median=%.2f"
+                        + " | remove Total=%d Mean=%.2f Median=%.2f ns",
+                result.getCollectionName(),
+                result.getSize(),
+                add.getTotal(),
+                add.getMean(),
+                add.getMedian(),
+                remove.getTotal(),
+                remove.getMean(),
+                remove.getMedian());
+    }
+
+    /**
+     * Builds conclusions from the measured results.
+     *
+     * @param results alternating ArrayList and LinkedList results
+     * @return formatted conclusions
+     */
+    public String conclusions(
+            List<ExperimentResult> results) {
+
+        StringBuilder text =
+                new StringBuilder();
+
+        text.append("MEASURED RESULTS\n");
+
+        text.append(
+                "Mean = arithmetic mean; "
+                        + "Median = actual median.\n\n");
+
+        for (int i = 0;
+             i + 1 < results.size();
+             i += 2) {
+
+            ExperimentResult array =
+                    results.get(i);
+
+            ExperimentResult linked =
+                    results.get(i + 1);
+
+            text.append(
+                    formatResult(array));
+
+            text.append('\n');
+
+            text.append(
+                    formatResult(linked));
+
+            text.append('\n');
+
+            text.append("Lower add Total: ");
+
+            text.append(
+                    array.getAddStats().getTotal()
+                            <= linked.getAddStats().getTotal()
+                            ? "ArrayList"
+                            : "LinkedList");
+
+            text.append('\n');
+
+            text.append("Lower remove Total: ");
+
+            text.append(
+                    array.getRemoveStats().getTotal()
+                            <= linked.getRemoveStats().getTotal()
+                            ? "ArrayList"
+                            : "LinkedList");
+
+            text.append('\n');
+
+            if (i >= 2) {
+
+                appendGrowth(
+                        text,
+                        array,
+                        results.get(i - 2));
+
+                appendGrowth(
+                        text,
+                        linked,
+                        results.get(i - 1));
+            }
+
+            text.append('\n');
+        }
+
+        text.append(
+                "ArrayList: append is amortized O(1); "
+                        + "indexed removal is O(n) due to shifts.\n");
+
+        text.append(
+                "LinkedList: append is O(1); "
+                        + "random indexed removal is O(n) "
+                        + "due to node traversal.\n");
+
+        text.append(
+                "Total depends on operation count; "
+                        + "Mean and Median describe "
+                        + "individual operations.\n");
+
+        text.append(
+                "Timing depends on JIT, GC and system load. "
+                        + "One run does not establish "
+                        + "a universal winner.\n");
+
+        text.append(
+                "Capacity measurements are recorded "
+                        + "in the ArrayList log files.\n");
+
+        return text.toString();
+    }
+
+    /**
+     * Appends timing changes between consecutive sizes.
+     *
+     * @param text output text
+     * @param current current experiment result
+     * @param previous previous experiment result
+     */
+    private void appendGrowth(
+            StringBuilder text,
+            ExperimentResult current,
+            ExperimentResult previous) {
+
+        text.append(
+                String.format(
+                        Locale.ROOT,
+                        "%s size growth %d -> %d:"
+                                + " add Total x%.2f, Median x%.2f;"
+                                + " remove Total x%.2f, Median x%.2f%n",
+                        current.getCollectionName(),
+                        previous.getSize(),
+                        current.getSize(),
+                        ratio(
+                                current.getAddStats().getTotal(),
+                                previous.getAddStats().getTotal()),
+                        ratio(
+                                current.getAddStats().getMedian(),
+                                previous.getAddStats().getMedian()),
+                        ratio(
+                                current.getRemoveStats().getTotal(),
+                                previous.getRemoveStats().getTotal()),
+                        ratio(
+                                current.getRemoveStats().getMedian(),
+                                previous.getRemoveStats().getMedian())));
+    }
+
+    /**
+     * Calculates a timing ratio.
+     *
+     * @param current current value
+     * @param previous previous value
+     * @return ratio or NaN if the denominator is zero
+     */
+    private double ratio(
+            double current,
+            double previous) {
+
+        return previous == 0
+                ? Double.NaN
+                : current / previous;
+    }
+
+    /**
+     * Displays a message in the console.
+     *
+     * @param text message to display
+     */
+    public void show(
+            String text) {
+
+        System.out.println(text);
+    }
+}
+
+
+collection controller
+
+
+package lab3.controller;
+
+import java.io.BufferedWriter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import lab3.model.CollectionExperiment;
+import lab3.model.DroneDatabase;
+import lab3.model.DroneType;
+import lab3.model.ExperimentResult;
+import lab3.model.FeasibilityCheck;
+import lab3.model.RandomGenerator;
+import lab3.model.Target;
+import lab3.model.TargetType;
+
+import lab3.view.CollectionView;
+
+/**
+ * Controls collection experiments and feasibility demonstrations.
+ */
+public class CollectionController {
+
+    private CollectionExperiment model;
+    private CollectionView view;
+    private ErrMsgLog messages;
+
+    /**
+     * Creates the collection controller.
+     *
+     * @param model collection experiment model
+     * @param view result view
+     * @param messages centralized message and error handler
+     */
+    public CollectionController(
+            CollectionExperiment model,
+            CollectionView view,
+            ErrMsgLog messages) {
+
+        this.model = model;
+        this.view = view;
+        this.messages = messages;
+    }
+
+    /**
+     * Runs ten experiments and saves performance conclusions.
+     */
+    public void start() {
+
+        List<ExperimentResult> results =
+                new ArrayList<ExperimentResult>();
+
+        int[] sizes = {
+                10,
+                100,
+                1000,
+                10000,
+                100000
+        };
+
+        try {
+
+            for (int size : sizes) {
+
+                ExperimentResult array =
+                        model.run(
+                                true,
+                                size,
+                                messages);
+
+                results.add(array);
+
+                view.show(
+                        view.formatResult(array));
+
+                ExperimentResult linked =
+                        model.run(
+                                false,
+                                size,
+                                messages);
+
+                results.add(linked);
+
+                view.show(
+                        view.formatResult(linked));
+            }
+
+            String conclusions =
+                    view.conclusions(results);
+
+            try (BufferedWriter writer =
+                         messages.open(
+                                 "conclusions.txt")) {
+
+                messages.line(
+                        writer,
+                        conclusions);
+            }
+
+            view.show(conclusions);
+
+        } catch (Exception error) {
+
+            messages.error(error);
+
+        } finally {
+
+            view.show(
+                    "Errors in current run: "
+                            + messages.getErrorCount());
+        }
+    }
+
+    /**
+     * Demonstrates feasibility checking, resource correction
+     * and checking with inactive reconnaissance.
+     */
+    public void checkFeasibility() {
+
+        try {
+
+            RandomGenerator generator =
+                    new RandomGenerator(2026);
+
+            DroneDatabase database =
+                    generator.generateDatabase(2);
+
+            List<Target> targets =
+                    generator.generateTargets(10);
+
+            /*
+             * Include every target type in the demonstration.
+             */
+            for (TargetType type :
+                    TargetType.values()) {
+
+                targets.add(
+                        generator.generateTarget(type));
+            }
+
+            FeasibilityCheck checker =
+                    new FeasibilityCheck();
+
+            StringBuilder report =
+                    new StringBuilder();
+
+            report.append(
+                    "FEASIBILITY MODE\n");
+
+            report.append(
+                    "Checks the target-processing stage "
+                            + "under the original simulation rules.\n");
+
+            report.append(
+                    "Drones are reused between targets; "
+                            + "requirements use a maximum per type.\n");
+
+            report.append(
+                    "This does not guarantee base survival "
+                            + "through all simulation steps.\n\n");
+
+            report.append(
+                    "Generated drones: ");
+
+            report.append(database.size());
+            report.append('\n');
+
+            report.append(
+                    "Generated targets: ");
+
+            report.append(targets.size());
+            report.append('\n');
+
+            Map<DroneType, Integer> missing =
+                    checker.findMissing(
+                            database,
+                            targets);
+
+            report.append(
+                    "Initially solvable: ");
+
+            report.append(
+                    checker.isSolvable(
+                            database,
+                            targets,
+                            true));
+
+            report.append('\n');
+
+            for (Map.Entry<DroneType, Integer> entry
+                    : missing.entrySet()) {
+
+                report.append("Proposal: add ");
+
+                report.append(
+                        entry.getValue());
+
+                report.append(
+                        " drone(s) of type ");
+
+                report.append(
+                        entry.getKey());
+
+                report.append('\n');
+            }
+
+            checker.addMissing(
+                    database,
+                    missing,
+                    generator);
+
+            boolean repaired =
+                    checker.isSolvable(
+                            database,
+                            targets,
+                            true);
+
+            report.append(
+                    "Solvable after adding missing drones: ");
+
+            report.append(repaired);
+            report.append('\n');
+
+            if (!repaired) {
+
+                throw new IllegalStateException(
+                        "Feasibility correction failed");
+            }
+
+            report.append(
+                    "Solvable with inactive scout: ");
+
+            report.append(
+                    checker.isSolvable(
+                            database,
+                            targets,
+                            false));
+
+            report.append('\n');
+
+            report.append(
+                    "With inactive reconnaissance, "
+                            + "wait for the scout restart "
+                            + "and obtain current target information.\n");
+
+            try (BufferedWriter writer =
+                         messages.open(
+                                 "feasibility.txt")) {
+
+                messages.line(
+                        writer,
+                        report.toString());
+            }
+
+            view.show(
+                    report.toString());
+
+        } catch (Exception error) {
+
+            messages.error(error);
+        }
+    }
+}
